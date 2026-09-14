@@ -206,6 +206,14 @@
   </div>
 </div>
 
+<!-- ============ CUENTA PENDIENTE DE APROBACIÓN ============ -->
+<div id="pendingScreen" class="hidden" style="max-width:340px;margin:60px auto;padding:0 16px;text-align:center;">
+  <div class="mark" style="width:52px;height:52px;border-radius:14px;margin:0 auto 16px;background:linear-gradient(135deg,var(--yellow),var(--gold));display:flex;align-items:center;justify-content:center;font-size:24px;">⏳</div>
+  <h1 style="font-size:19px;">Cuenta pendiente</h1>
+  <p style="color:var(--muted);font-size:13px;">Tu acceso todavía no ha sido aprobado. Avísale a tu mentor que ya te registraste — en cuanto lo apruebe podrás entrar.</p>
+  <button class="logout" id="pendingLogout" style="margin-top:10px;">Salir</button>
+</div>
+
 <!-- ============ APP ============ -->
 <div class="wrap hidden" id="app">
   <header class="top">
@@ -228,6 +236,7 @@
     <button data-tab="libros" data-color="yellow"><span class="dot"></span>Libros</button>
     <button data-tab="entrenamiento" data-color="purple"><span class="dot"></span>Entrenamiento</button>
     <button data-tab="resumen" data-color="blue"><span class="dot"></span>Resumen</button>
+    <button data-tab="alumnos" data-color="blue" id="adminTabBtn" class="hidden"><span class="dot"></span>Alumnos</button>
   </nav>
 
   <!-- ---------- BITÁCORA (calendario) ---------- -->
@@ -375,6 +384,18 @@
     </div>
   </section>
 
+  <!-- ---------- ALUMNOS (solo admin) ---------- -->
+  <section class="panel" id="panel-alumnos">
+    <div class="card">
+      <h2 style="color:var(--blue)">👥 Alumnos</h2>
+      <div id="studentList"><div class="empty-msg">Cargando...</div></div>
+    </div>
+    <div class="card hidden" id="studentDetailCard">
+      <h2 style="color:var(--blue)">📊 Detalle <span class="sub" id="studentDetailEmail"></span></h2>
+      <div id="studentDetail"></div>
+    </div>
+  </section>
+
 </div>
 
 <script>
@@ -428,11 +449,37 @@ document.getElementById('logoutBtn').onclick = async () => {
   authScreen.classList.remove('hidden');
 };
 
+let isAdmin = false;
+
 async function onLogin(user){
   currentUser = user;
+
+  // esperar un momento a que el trigger cree el perfil en el primer registro
+  let profile = null;
+  for(let i=0;i<4;i++){
+    const { data } = await sb.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+    if(data){ profile = data; break; }
+    await new Promise(r=>setTimeout(r,700));
+  }
+
+  isAdmin = !!(profile && profile.is_admin);
+
+  if(profile && !profile.approved && !isAdmin){
+    authScreen.classList.add('hidden');
+    document.getElementById('pendingScreen').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('pendingScreen').classList.add('hidden');
   document.getElementById('userEmail').textContent = user.email;
   authScreen.classList.add('hidden');
   appEl.classList.remove('hidden');
+
+  if(isAdmin){
+    document.getElementById('adminTabBtn').classList.remove('hidden');
+    loadStudents();
+  }
+
   await loadPlan();
   await loadEntries();
   await loadBooks();
@@ -440,6 +487,12 @@ async function onLogin(user){
   renderCalendar();
   updateResumen();
 }
+
+document.getElementById('pendingLogout').onclick = async () => {
+  await sb.auth.signOut();
+  document.getElementById('pendingScreen').classList.add('hidden');
+  authScreen.classList.remove('hidden');
+};
 
 sb.auth.getSession().then(({data}) => {
   if(data.session) onLogin(data.session.user);
@@ -697,6 +750,78 @@ async function updateResumen(){
     planEl.textContent = 'Aún no has guardado tu plan.';
   }
 }
+
+// ---------- ALUMNOS (solo admin) ----------
+async function loadStudents(){
+  const { data: profiles } = await sb.from('profiles').select('*').order('created_at', {ascending:false});
+  const list = document.getElementById('studentList');
+  if(!profiles || !profiles.length){ list.innerHTML = '<div class="empty-msg">Sin alumnos registrados aún</div>'; return; }
+
+  list.innerHTML = profiles.filter(p=>!p.is_admin).map(p => `
+    <div class="list-item">
+      <div>
+        <div>${p.email}</div>
+        <div class="meta">${p.approved ? '✅ Aprobado' : '⏳ Pendiente de aprobación'}</div>
+      </div>
+      <div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        ${p.approved
+          ? `<span class="del" style="color:var(--muted)" onclick="toggleApproval('${p.user_id}', false)">revocar</span>`
+          : `<span class="del" style="color:var(--green)" onclick="toggleApproval('${p.user_id}', true)">aprobar</span>`}
+        <span class="del" style="color:var(--blue)" onclick="viewStudent('${p.user_id}','${p.email}')">ver progreso</span>
+      </div>
+    </div>`).join('');
+}
+
+async function toggleApproval(user_id, approved){
+  await sb.from('profiles').update({ approved }).eq('user_id', user_id);
+  loadStudents();
+}
+window.toggleApproval = toggleApproval;
+
+async function viewStudent(user_id, email){
+  const card = document.getElementById('studentDetailCard');
+  const box = document.getElementById('studentDetail');
+  document.getElementById('studentDetailEmail').textContent = '— ' + email;
+  card.classList.remove('hidden');
+  box.innerHTML = '<div class="empty-msg">Cargando...</div>';
+
+  const [{data: plan}, {data: entries}, {data: books}, {data: training}] = await Promise.all([
+    sb.from('trading_plans').select('*').eq('user_id', user_id).maybeSingle(),
+    sb.from('journal_entries').select('*').eq('user_id', user_id).order('fecha', {ascending:false}),
+    sb.from('books').select('*').eq('user_id', user_id),
+    sb.from('training_logs').select('*').eq('user_id', user_id)
+  ]);
+
+  let pnl=0, win=0, loss=0;
+  (entries||[]).forEach(e=>{
+    const net = Number(e.ganancia||0) - Number(e.perdida||0);
+    pnl += net; if(net>0) win++; else if(net<0) loss++;
+  });
+
+  const planHtml = plan && (plan.reglas_entrada || plan.riesgo_por_operacion)
+    ? `Riesgo: <b>${plan.riesgo_por_operacion}%</b> · Sesiones: <b>${(plan.sesiones||[]).join(', ')||'—'}</b> · Horario: <b>${plan.horario_ejecucion||'—'}</b><br><span class="meta">Entrada: ${plan.reglas_entrada||'—'}</span>`
+    : '<span class="empty-msg">No ha guardado su plan aún.</span>';
+
+  const entriesHtml = (entries||[]).slice(0,10).map(e=>`
+    <div class="list-item">
+      <div>${e.estado_emocional||''} ${e.fecha} — ${e.instrumentos||''} <div class="meta">${e.notas||''}</div></div>
+      <div style="text-align:right"><div style="color:var(--green)">+$${Number(e.ganancia||0).toFixed(2)}</div><div style="color:var(--red)">-$${Number(e.perdida||0).toFixed(2)}</div></div>
+    </div>`).join('') || '<div class="empty-msg">Sin registros</div>';
+
+  box.innerHTML = `
+    <div class="stat-grid" style="margin-bottom:16px">
+      <div class="stat c1"><div class="label">P&L total</div><div class="value ${pnl>=0?'green':'red'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div></div>
+      <div class="stat c2"><div class="label">Días ganadores</div><div class="value green">${win}</div></div>
+      <div class="stat c3"><div class="label">Días perdedores</div><div class="value red">${loss}</div></div>
+      <div class="stat c4"><div class="label">Libros / Entreno</div><div class="value">${(books||[]).length} / ${(training||[]).length}</div></div>
+    </div>
+    <h2 style="color:var(--gold)">🎯 Plan de Trading</h2>
+    <p style="font-size:13px">${planHtml}</p>
+    <h2 style="margin-top:16px">📋 Últimas entradas</h2>
+    ${entriesHtml}
+  `;
+}
+window.viewStudent = viewStudent;
 </script>
 </body>
 </html>
