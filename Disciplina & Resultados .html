@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi Journal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0B0F14;
+    --panel:#121821;
+    --panel-2:#161d28;
+    --line:#232c39;
+    --text:#E6EAF0;
+    --muted:#8B96A3;
+    --gold:#D4A24C;
+    --green:#3FB68B;
+    --red:#E0575B;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Inter",Segoe UI,Roboto,sans-serif;
+    line-height:1.45;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px;}
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px;
+  }
+  header.top .brand{display:flex;align-items:center;gap:10px;}
+  header.top .brand .mark{
+    width:34px;height:34px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),#8a6a2c);
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  header.top h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header.top .user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;}
+  header.top button.logout{
+    background:none;border:1px solid var(--line);color:var(--muted);
+    padding:6px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;
+  }
+  nav.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px;}
+  nav.tabs button{
+    flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    padding:9px 14px;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  nav.tabs button.active{
+    background:var(--gold);color:#1a1305;border-color:var(--gold);font-weight:600;
+  }
+  section.panel{display:none;}
+  section.panel.active{display:block;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:14px;border-left:3px solid var(--line);
+  }
+  .card.accent-gold{border-left-color:var(--gold);}
+  .card.accent-green{border-left-color:var(--green);}
+  .card h2{font-size:14px;margin:0 0 12px;font-weight:600;color:var(--text);}
+  .card h2 .sub{color:var(--muted);font-weight:400;font-size:12px;}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  label:first-child{margin-top:0;}
+  input,select,textarea{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:9px 10px;border-radius:var(--radius);font-size:14px;font-family:inherit;
+  }
+  textarea{min-height:80px;resize:vertical;}
+  .row{display:flex;gap:10px;}
+  .row > div{flex:1;}
+  .btn{
+    background:var(--gold);color:#1a1305;border:none;padding:10px 16px;
+    border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-top:14px;
+  }
+  .btn.secondary{background:none;border:1px solid var(--line);color:var(--text);}
+  .btn.danger{background:none;border:1px solid var(--red);color:var(--red);}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;}
+  .stat .label{font-size:11px;color:var(--muted);}
+  .stat .value{font-size:20px;font-weight:700;margin-top:2px;}
+  .value.green{color:var(--green);}
+  .value.red{color:var(--red);}
+  .list-item{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:10px 0;border-top:1px solid var(--line);font-size:13px;gap:10px;
+  }
+  .list-item:first-child{border-top:none;}
+  .list-item .meta{color:var(--muted);font-size:12px;}
+  .list-item .del{color:var(--red);cursor:pointer;font-size:12px;flex-shrink:0;}
+  .empty{color:var(--muted);font-size:13px;padding:6px 0;}
+  .checklist{display:flex;flex-wrap:wrap;gap:8px;}
+  .checklist label{
+    display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);
+    padding:6px 10px;border-radius:999px;font-size:12px;color:var(--text);margin:0;width:auto;
+  }
+  .checklist input{width:auto;}
+  /* auth screen */
+  #authScreen{max-width:340px;margin:60px auto;padding:0 16px;}
+  #authScreen .mark{
+    width:48px;height:48px;border-radius:50%;margin:0 auto 16px;
+    background:linear-gradient(135deg,var(--gold),#8a6a2c);
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+  }
+  #authScreen h1{text-align:center;font-size:19px;margin-bottom:4px;}
+  #authScreen p.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;}
+  #authTabs{display:flex;gap:8px;margin-bottom:16px;}
+  #authTabs button{
+    flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    padding:8px;border-radius:var(--radius);font-size:13px;cursor:pointer;
+  }
+  #authTabs button.active{background:var(--panel-2);color:var(--text);border-color:var(--gold);}
+  #authMsg{font-size:12px;margin-top:10px;min-height:16px;}
+  #authMsg.error{color:var(--red);}
+  #authMsg.ok{color:var(--green);}
+  .hidden{display:none !important;}
+  ::placeholder{color:#54606f;}
+</style>
+</head>
+<body>
+
+<!-- ============ PANTALLA DE LOGIN / REGISTRO ============ -->
+<div id="authScreen">
+  <div class="mark">⚡</div>
+  <h1>Mi Journal</h1>
+  <p class="sub">Bitácora · Plan de Trading · Libros · Entrenamiento</p>
+
+  <div id="authTabs">
+    <button id="tabLogin" class="active">Iniciar sesión</button>
+    <button id="tabSignup">Crear cuenta</button>
+  </div>
+
+  <div class="card">
+    <label>Correo</label>
+    <input type="email" id="authEmail" placeholder="tucorreo@ejemplo.com">
+    <label>Contraseña</label>
+    <input type="password" id="authPass" placeholder="••••••••">
+    <button class="btn" id="authSubmit" style="width:100%">Entrar</button>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<!-- ============ APP PRINCIPAL (oculta hasta iniciar sesión) ============ -->
+<div class="wrap hidden" id="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">⚡</div>
+      <h1>Mi Journal</h1>
+    </div>
+    <div class="user">
+      <span id="userEmail"></span>
+      <button class="logout" id="logoutBtn">Salir</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="plan" class="active">🎯 Plan de Trading</button>
+    <button data-tab="bitacora">📈 Bitácora</button>
+    <button data-tab="libros">📚 Libros</button>
+    <button data-tab="entrenamiento">💪 Entrenamiento</button>
+    <button data-tab="resumen">🌐 Resumen</button>
+  </nav>
+
+  <!-- ---------- PLAN DE TRADING ---------- -->
+  <section class="panel active" id="panel-plan">
+    <div class="card accent-gold">
+      <h2>🎯 Plan de Trading <span class="sub">— tus reglas, tu disciplina</span></h2>
+      <label>Riesgo por operación (%)</label>
+      <input type="number" step="0.1" id="planRiesgo" placeholder="1">
+
+      <label>Sesiones que operas</label>
+      <div class="checklist">
+        <label><input type="checkbox" value="Tokyo" class="sesionChk"> Tokyo</label>
+        <label><input type="checkbox" value="Londres" class="sesionChk"> Londres</label>
+        <label><input type="checkbox" value="NY AM" class="sesionChk"> NY AM</label>
+        <label><input type="checkbox" value="NY PM" class="sesionChk"> NY PM</label>
+      </div>
+
+      <label>Horario de ejecución</label>
+      <input type="text" id="planHorario" placeholder="09:30 - 10:30 NY">
+
+      <label>Reglas de entrada</label>
+      <textarea id="planEntrada" placeholder="Ej: Barrido de liquidez + MSS de confirmación en cajita, orden pendiente BUY/SELL STOP con validez de 30 min..."></textarea>
+
+      <label>Reglas de salida</label>
+      <textarea id="planSalida" placeholder="Ej: TP en próximo nivel de liquidez, SL detrás del sweep..."></textarea>
+
+      <label>Gestión de riesgo</label>
+      <textarea id="planGestion" placeholder="Ej: Máximo 2 operaciones por día, stop diario -2%, sin operar tras 2 pérdidas seguidas..."></textarea>
+
+      <label>Notas</label>
+      <textarea id="planNotas" placeholder="Cualquier otra regla o recordatorio personal"></textarea>
+
+      <button class="btn" id="savePlan">💾 GUARDAR PLAN</button>
+      <div id="planMsg" style="font-size:12px;color:var(--green);margin-top:8px;"></div>
+    </div>
+  </section>
+
+  <!-- ---------- BITÁCORA ---------- -->
+  <section class="panel" id="panel-bitacora">
+    <div class="card">
+      <h2>✏️ Registrar día</h2>
+      <div class="row">
+        <div><label>Fecha</label><input type="date" id="beFecha"></div>
+      </div>
+      <div class="row">
+        <div><label>Ganancia ($)</label><input type="number" step="0.01" id="beGanancia" placeholder="0"></div>
+        <div><label>Pérdida ($)</label><input type="number" step="0.01" id="bePerdida" placeholder="0"></div>
+      </div>
+      <label>Instrumentos</label>
+      <input type="text" id="beInstrumentos" placeholder="XAUUSD, US100...">
+      <label>Estado emocional</label>
+      <select id="beEmocion">
+        <option value="😎">😎 Tranquilo</option>
+        <option value="🎯">🎯 Enfocado</option>
+        <option value="😰">😰 Ansioso</option>
+        <option value="😤">😤 Frustrado</option>
+        <option value="🧘">🧘 Sereno</option>
+        <option value="😵">😵 Disperso</option>
+      </select>
+      <label>Notas del día</label>
+      <textarea id="beNotas" placeholder="¿Qué pasó hoy?"></textarea>
+      <button class="btn" id="saveEntry">💾 GUARDAR</button>
+    </div>
+    <div class="card">
+      <h2>📋 Últimas entradas</h2>
+      <div id="entryList"><div class="empty">Sin registros aún</div></div>
+    </div>
+  </section>
+
+  <!-- ---------- LIBROS ---------- -->
+  <section class="panel" id="panel-libros">
+    <div class="card">
+      <h2>📚 Agregar libro</h2>
+      <label>Título</label>
+      <input type="text" id="bkTitulo" placeholder="Trading in the Zone">
+      <label>Autor</label>
+      <input type="text" id="bkAutor" placeholder="Mark Douglas">
+      <label>Estado</label>
+      <select id="bkEstado">
+        <option value="pendiente">Pendiente</option>
+        <option value="leyendo">Leyendo</option>
+        <option value="leido">Leído</option>
+      </select>
+      <label>Notas</label>
+      <textarea id="bkNotas" placeholder="Ideas clave, citas..."></textarea>
+      <button class="btn" id="saveBook">💾 AGREGAR</button>
+    </div>
+    <div class="card">
+      <h2>📖 Tu biblioteca</h2>
+      <div id="bookList"><div class="empty">Sin libros aún</div></div>
+    </div>
+  </section>
+
+  <!-- ---------- ENTRENAMIENTO ---------- -->
+  <section class="panel" id="panel-entrenamiento">
+    <div class="card">
+      <h2>💪 Registrar sesión</h2>
+      <div class="row">
+        <div><label>Fecha</label><input type="date" id="trFecha"></div>
+        <div><label>Duración (min)</label><input type="number" id="trDuracion" placeholder="30"></div>
+      </div>
+      <label>Tipo</label>
+      <input type="text" id="trTipo" placeholder="Backtesting, revisión de operaciones, estudio...">
+      <label>Notas</label>
+      <textarea id="trNotas" placeholder="¿Qué trabajaste hoy?"></textarea>
+      <button class="btn" id="saveTraining">💾 GUARDAR</button>
+    </div>
+    <div class="card">
+      <h2>📋 Historial</h2>
+      <div id="trainingList"><div class="empty">Sin registros aún</div></div>
+    </div>
+  </section>
+
+  <!-- ---------- RESUMEN ---------- -->
+  <section class="panel" id="panel-resumen">
+    <div class="stat-grid">
+      <div class="stat"><div class="label">P&L total</div><div class="value" id="sumPnl">$0.00</div></div>
+      <div class="stat"><div class="label">Win rate</div><div class="value" id="sumWinrate">—</div></div>
+      <div class="stat"><div class="label">Días ganadores</div><div class="value green" id="sumWin">0</div></div>
+      <div class="stat"><div class="label">Días perdedores</div><div class="value red" id="sumLoss">0</div></div>
+      <div class="stat"><div class="label">Sesiones de entrenamiento</div><div class="value" id="sumTrain">0</div></div>
+      <div class="stat"><div class="label">Libros leídos</div><div class="value" id="sumBooks">0</div></div>
+    </div>
+    <div class="card accent-green">
+      <h2>🎯 Estado del Plan de Trading</h2>
+      <div id="planSummary" class="empty">Aún no has guardado tu plan.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======= CONFIGURA TU PROYECTO DE SUPABASE AQUÍ ======= */
+const SUPABASE_URL = "https://eboavayczimgblmurfcu.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_QlvYrE6plY4Cr1WEeUJhLA_a1ohfszY";
+/* ======================================================= */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+
+// ---------- AUTH ----------
+const authScreen = document.getElementById('authScreen');
+const appEl = document.getElementById('app');
+const tabLogin = document.getElementById('tabLogin');
+const tabSignup = document.getElementById('tabSignup');
+const authSubmit = document.getElementById('authSubmit');
+const authMsg = document.getElementById('authMsg');
+let authMode = 'login';
+
+tabLogin.onclick = () => { authMode='login'; tabLogin.classList.add('active'); tabSignup.classList.remove('active'); authSubmit.textContent='Entrar'; authMsg.textContent=''; };
+tabSignup.onclick = () => { authMode='signup'; tabSignup.classList.add('active'); tabLogin.classList.remove('active'); authSubmit.textContent='Crear cuenta'; authMsg.textContent=''; };
+
+authSubmit.onclick = async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPass').value;
+  authMsg.className=''; authMsg.textContent='Procesando...';
+  if(!email || !password){ authMsg.className='error'; authMsg.textContent='Completa correo y contraseña'; return; }
+
+  if(authMode === 'login'){
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ authMsg.className='error'; authMsg.textContent=error.message; return; }
+    onLogin(data.user);
+  } else {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if(error){ authMsg.className='error'; authMsg.textContent=error.message; return; }
+    if(data.user && !data.session){
+      authMsg.className='ok'; authMsg.textContent='Cuenta creada. Revisa tu correo para confirmar.';
+    } else if(data.session){
+      onLogin(data.user);
+    }
+  }
+};
+
+document.getElementById('logoutBtn').onclick = async () => {
+  await sb.auth.signOut();
+  currentUser = null;
+  appEl.classList.add('hidden');
+  authScreen.classList.remove('hidden');
+};
+
+async function onLogin(user){
+  currentUser = user;
+  document.getElementById('userEmail').textContent = user.email;
+  authScreen.classList.add('hidden');
+  appEl.classList.remove('hidden');
+  await loadPlan();
+  await loadEntries();
+  await loadBooks();
+  await loadTraining();
+  updateResumen();
+}
+
+// restaurar sesión si ya existe
+sb.auth.getSession().then(({data}) => {
+  if(data.session) onLogin(data.session.user);
+});
+
+// ---------- TABS ----------
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'resumen') updateResumen();
+  };
+});
+
+// ---------- PLAN DE TRADING ----------
+async function loadPlan(){
+  const { data } = await sb.from('trading_plans').select('*').eq('user_id', currentUser.id).maybeSingle();
+  if(data){
+    document.getElementById('planRiesgo').value = data.riesgo_por_operacion ?? '';
+    document.getElementById('planHorario').value = data.horario_ejecucion ?? '';
+    document.getElementById('planEntrada').value = data.reglas_entrada ?? '';
+    document.getElementById('planSalida').value = data.reglas_salida ?? '';
+    document.getElementById('planGestion').value = data.gestion_riesgo ?? '';
+    document.getElementById('planNotas').value = data.notas ?? '';
+    (data.sesiones||[]).forEach(s=>{
+      document.querySelectorAll('.sesionChk').forEach(c=>{ if(c.value===s) c.checked=true; });
+    });
+  }
+}
+
+document.getElementById('savePlan').onclick = async () => {
+  const sesiones = [...document.querySelectorAll('.sesionChk:checked')].map(c=>c.value);
+  const payload = {
+    user_id: currentUser.id,
+    riesgo_por_operacion: parseFloat(document.getElementById('planRiesgo').value) || 0,
+    sesiones,
+    horario_ejecucion: document.getElementById('planHorario').value,
+    reglas_entrada: document.getElementById('planEntrada').value,
+    reglas_salida: document.getElementById('planSalida').value,
+    gestion_riesgo: document.getElementById('planGestion').value,
+    notas: document.getElementById('planNotas').value,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('trading_plans').upsert(payload, { onConflict: 'user_id' });
+  const msg = document.getElementById('planMsg');
+  msg.style.color = error ? 'var(--red)' : 'var(--green)';
+  msg.textContent = error ? error.message : '✓ Plan guardado';
+};
+
+// ---------- BITÁCORA ----------
+async function loadEntries(){
+  const { data } = await sb.from('journal_entries').select('*').eq('user_id', currentUser.id).order('fecha', {ascending:false}).limit(20);
+  const list = document.getElementById('entryList');
+  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin registros aún</div>'; return; }
+  list.innerHTML = data.map(e => `
+    <div class="list-item">
+      <div>
+        <div>${e.estado_emocional||''} ${e.fecha} — ${e.instrumentos||''}</div>
+        <div class="meta">${e.notas||''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--green)">+$${Number(e.ganancia||0).toFixed(2)}</div>
+        <div style="color:var(--red)">-$${Number(e.perdida||0).toFixed(2)}</div>
+        <div class="del" onclick="delRow('journal_entries','${e.id}',loadEntries)">eliminar</div>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('saveEntry').onclick = async () => {
+  const payload = {
+    user_id: currentUser.id,
+    fecha: document.getElementById('beFecha').value || new Date().toISOString().slice(0,10),
+    ganancia: parseFloat(document.getElementById('beGanancia').value) || 0,
+    perdida: parseFloat(document.getElementById('bePerdida').value) || 0,
+    instrumentos: document.getElementById('beInstrumentos').value,
+    estado_emocional: document.getElementById('beEmocion').value,
+    notas: document.getElementById('beNotas').value
+  };
+  await sb.from('journal_entries').insert(payload);
+  ['beGanancia','bePerdida','beInstrumentos','beNotas'].forEach(id=>document.getElementById(id).value='');
+  await loadEntries();
+};
+
+// ---------- LIBROS ----------
+async function loadBooks(){
+  const { data } = await sb.from('books').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
+  const list = document.getElementById('bookList');
+  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin libros aún</div>'; return; }
+  list.innerHTML = data.map(b => `
+    <div class="list-item">
+      <div>
+        <div>${b.titulo} ${b.autor?'— '+b.autor:''}</div>
+        <div class="meta">${b.estado} · ${b.notas||''}</div>
+      </div>
+      <div class="del" onclick="delRow('books','${b.id}',loadBooks)">eliminar</div>
+    </div>`).join('');
+}
+
+document.getElementById('saveBook').onclick = async () => {
+  const payload = {
+    user_id: currentUser.id,
+    titulo: document.getElementById('bkTitulo').value,
+    autor: document.getElementById('bkAutor').value,
+    estado: document.getElementById('bkEstado').value,
+    notas: document.getElementById('bkNotas').value
+  };
+  if(!payload.titulo) return;
+  await sb.from('books').insert(payload);
+  ['bkTitulo','bkAutor','bkNotas'].forEach(id=>document.getElementById(id).value='');
+  await loadBooks();
+};
+
+// ---------- ENTRENAMIENTO ----------
+async function loadTraining(){
+  const { data } = await sb.from('training_logs').select('*').eq('user_id', currentUser.id).order('fecha', {ascending:false}).limit(20);
+  const list = document.getElementById('trainingList');
+  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin registros aún</div>'; return; }
+  list.innerHTML = data.map(t => `
+    <div class="list-item">
+      <div>
+        <div>${t.fecha} — ${t.tipo||''}</div>
+        <div class="meta">${t.notas||''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="meta">${t.duracion_min||0} min</div>
+        <div class="del" onclick="delRow('training_logs','${t.id}',loadTraining)">eliminar</div>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('saveTraining').onclick = async () => {
+  const payload = {
+    user_id: currentUser.id,
+    fecha: document.getElementById('trFecha').value || new Date().toISOString().slice(0,10),
+    tipo: document.getElementById('trTipo').value,
+    duracion_min: parseInt(document.getElementById('trDuracion').value) || 0,
+    notas: document.getElementById('trNotas').value
+  };
+  await sb.from('training_logs').insert(payload);
+  ['trTipo','trDuracion','trNotas'].forEach(id=>document.getElementById(id).value='');
+  await loadTraining();
+};
+
+// ---------- UTIL ----------
+async function delRow(table, id, reload){
+  await sb.from(table).delete().eq('id', id);
+  reload();
+}
+window.delRow = delRow;
+
+// ---------- RESUMEN ----------
+async function updateResumen(){
+  const { data: entries } = await sb.from('journal_entries').select('*').eq('user_id', currentUser.id);
+  const { data: training } = await sb.from('training_logs').select('id').eq('user_id', currentUser.id);
+  const { data: books } = await sb.from('books').select('id').eq('user_id', currentUser.id).eq('estado','leido');
+  const { data: plan } = await sb.from('trading_plans').select('*').eq('user_id', currentUser.id).maybeSingle();
+
+  let pnl=0, win=0, loss=0;
+  (entries||[]).forEach(e=>{
+    const net = Number(e.ganancia||0) - Number(e.perdida||0);
+    pnl += net;
+    if(net>0) win++; else if(net<0) loss++;
+  });
+  document.getElementById('sumPnl').textContent = (pnl>=0?'+':'') + '$' + pnl.toFixed(2);
+  document.getElementById('sumPnl').className = 'value ' + (pnl>=0?'green':'red');
+  document.getElementById('sumWin').textContent = win;
+  document.getElementById('sumLoss').textContent = loss;
+  const total = win+loss;
+  document.getElementById('sumWinrate').textContent = total ? Math.round(win/total*100)+'%' : '—';
+  document.getElementById('sumTrain').textContent = (training||[]).length;
+  document.getElementById('sumBooks').textContent = (books||[]).length;
+
+  const planEl = document.getElementById('planSummary');
+  if(plan && (plan.reglas_entrada || plan.riesgo_por_operacion)){
+    planEl.className='';
+    planEl.innerHTML = `Riesgo: <b>${plan.riesgo_por_operacion}%</b> por operación · Sesiones: <b>${(plan.sesiones||[]).join(', ')||'—'}</b> · Horario: <b>${plan.horario_ejecucion||'—'}</b>`;
+  } else {
+    planEl.className='empty';
+    planEl.textContent = 'Aún no has guardado tu plan.';
+  }
+}
+</script>
+</body>
+</html>
