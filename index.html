@@ -3,128 +3,193 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Disciplina & Resultados</title>
+<title>Mi Journal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#0B0F14;
-    --panel:#121821;
-    --panel-2:#161d28;
-    --line:#232c39;
-    --text:#E6EAF0;
-    --muted:#8B96A3;
-    --gold:#D4A24C;
-    --green:#3FB68B;
-    --red:#E0575B;
-    --radius:6px;
+    --bg:#070b14;
+    --panel:#0d1220;
+    --panel-2:#121a2e;
+    --line:#1f2b44;
+    --text:#EAF0FF;
+    --muted:#7c8bab;
+    --cyan:#33f0c8;
+    --green:#4ee08a;
+    --yellow:#ffd84d;
+    --purple:#b98dff;
+    --blue:#5dc7ff;
+    --gold:#e0b559;
+    --red:#ff5d6c;
+    --radius:10px;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:var(--bg);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(51,240,200,.08), transparent 40%),
+      radial-gradient(circle at 85% 10%, rgba(185,141,255,.08), transparent 40%),
+      var(--bg);
     color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Inter",Segoe UI,Roboto,sans-serif;
     line-height:1.45;
   }
-  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 16px 80px;}
+  ::placeholder{color:#4c5a7a;}
+
+  /* ---------- HEADER ---------- */
   header.top{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+    padding:6px 0 18px;margin-bottom:14px;
   }
-  header.top .brand{display:flex;align-items:center;gap:10px;}
+  header.top .brand{display:flex;align-items:center;gap:12px;}
   header.top .brand .mark{
-    width:34px;height:34px;border-radius:50%;
-    background:linear-gradient(135deg,var(--gold),#8a6a2c);
-    display:flex;align-items:center;justify-content:center;font-size:16px;
+    width:42px;height:42px;border-radius:12px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    box-shadow:0 0 18px rgba(51,240,200,.35);
   }
-  header.top h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header.top h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.3px;}
+  header.top .tagline{font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
   header.top .user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;}
   header.top button.logout{
     background:none;border:1px solid var(--line);color:var(--muted);
-    padding:6px 10px;border-radius:var(--radius);font-size:12px;cursor:pointer;
+    padding:7px 12px;border-radius:999px;font-size:12px;cursor:pointer;
   }
-  nav.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:20px;padding-bottom:2px;}
+
+  /* ---------- NAV PILLS ---------- */
+  nav.tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;padding-bottom:4px;}
   nav.tabs button{
-    flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);
-    padding:9px 14px;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap;
+    flex:0 0 auto;background:transparent;color:var(--muted);
+    padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.5px;
+    cursor:pointer;white-space:nowrap;text-transform:uppercase;
+    border:1.5px solid var(--line);display:flex;align-items:center;gap:7px;
   }
+  nav.tabs button .dot{width:8px;height:8px;border-radius:3px;background:currentColor;}
+  nav.tabs button[data-color="cyan"]{color:var(--cyan);}
+  nav.tabs button[data-color="gold"]{color:var(--gold);}
+  nav.tabs button[data-color="yellow"]{color:var(--yellow);}
+  nav.tabs button[data-color="purple"]{color:var(--purple);}
+  nav.tabs button[data-color="blue"]{color:var(--blue);}
   nav.tabs button.active{
-    background:var(--gold);color:#1a1305;border-color:var(--gold);font-weight:600;
+    border-color:currentColor;background:rgba(255,255,255,.03);
+    box-shadow:0 0 14px currentColor;
   }
+
   section.panel{display:none;}
   section.panel.active{display:block;}
+
+  /* ---------- CARDS ---------- */
   .card{
     background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    padding:16px;margin-bottom:14px;border-left:3px solid var(--line);
+    padding:18px;margin-bottom:16px;
   }
-  .card.accent-gold{border-left-color:var(--gold);}
-  .card.accent-green{border-left-color:var(--green);}
-  .card h2{font-size:14px;margin:0 0 12px;font-weight:600;color:var(--text);}
-  .card h2 .sub{color:var(--muted);font-weight:400;font-size:12px;}
-  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  .card h2{font-size:13px;margin:0 0 14px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;}
+  .card h2 .sub{color:var(--muted);font-weight:500;font-size:11px;text-transform:none;letter-spacing:0;}
+  label{display:block;font-size:11px;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.4px;}
   label:first-child{margin-top:0;}
   input,select,textarea{
     width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
-    padding:9px 10px;border-radius:var(--radius);font-size:14px;font-family:inherit;
+    padding:10px 11px;border-radius:8px;font-size:14px;font-family:inherit;
   }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);}
   textarea{min-height:80px;resize:vertical;}
   .row{display:flex;gap:10px;}
   .row > div{flex:1;}
+
   .btn{
-    background:var(--gold);color:#1a1305;border:none;padding:10px 16px;
-    border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;margin-top:14px;
+    background:transparent;color:var(--green);border:1.5px solid var(--green);padding:11px 18px;
+    border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+    cursor:pointer;margin-top:16px;box-shadow:0 0 0 rgba(78,224,138,0);
+    transition:box-shadow .15s;
   }
-  .btn.secondary{background:none;border:1px solid var(--line);color:var(--text);}
-  .btn.danger{background:none;border:1px solid var(--red);color:var(--red);}
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;}
-  .stat .label{font-size:11px;color:var(--muted);}
-  .stat .value{font-size:20px;font-weight:700;margin-top:2px;}
+  .btn:active{box-shadow:0 0 16px rgba(78,224,138,.5);}
+  .btn.gold{color:var(--gold);border-color:var(--gold);}
+  .btn.gold:active{box-shadow:0 0 16px rgba(224,181,89,.5);}
+  .btn.full{width:100%;}
+
+  /* ---------- STAT GRID (resumen del mes) ---------- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px;}
+  .stat{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 14px;border-top:3px solid var(--line);
+  }
+  .stat.c1{border-top-color:var(--green);}
+  .stat.c2{border-top-color:var(--green);}
+  .stat.c3{border-top-color:var(--red);}
+  .stat.c4{border-top-color:var(--yellow);}
+  .stat.c5{border-top-color:var(--blue);}
+  .stat .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .stat .value{font-size:21px;font-weight:800;margin-top:3px;}
   .value.green{color:var(--green);}
   .value.red{color:var(--red);}
+
+  /* ---------- CALENDARIO ---------- */
+  .cal-layout{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:760px){ .cal-layout{grid-template-columns:1.3fr 1fr;} }
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-head .navbtn{background:none;border:1px solid var(--line);color:var(--text);width:30px;height:30px;border-radius:8px;font-size:14px;cursor:pointer;}
+  .cal-head .month{font-weight:800;font-size:14px;letter-spacing:.5px;text-transform:uppercase;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-grid .dow{font-size:10px;color:var(--muted);text-align:center;text-transform:uppercase;padding-bottom:4px;}
+  .cal-day{
+    aspect-ratio:1;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    display:flex;align-items:flex-start;justify-content:flex-start;padding:5px 6px;
+    font-size:12px;cursor:pointer;position:relative;color:var(--text);
+  }
+  .cal-day.empty{background:transparent;border-color:transparent;cursor:default;}
+  .cal-day.selected{border-color:var(--yellow);box-shadow:0 0 10px rgba(255,216,77,.4);}
+  .cal-day.has-entry::after{
+    content:'';position:absolute;bottom:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  }
+  .cal-legend{font-size:11px;color:var(--muted);margin-top:12px;}
+  .empty-msg{color:var(--muted);font-size:12px;padding:8px 0;}
+
   .list-item{
     display:flex;justify-content:space-between;align-items:flex-start;
     padding:10px 0;border-top:1px solid var(--line);font-size:13px;gap:10px;
   }
   .list-item:first-child{border-top:none;}
-  .list-item .meta{color:var(--muted);font-size:12px;}
-  .list-item .del{color:var(--red);cursor:pointer;font-size:12px;flex-shrink:0;}
-  .empty{color:var(--muted);font-size:13px;padding:6px 0;}
+  .list-item .meta{color:var(--muted);font-size:11px;}
+  .list-item .del{color:var(--red);cursor:pointer;font-size:11px;flex-shrink:0;}
+
   .checklist{display:flex;flex-wrap:wrap;gap:8px;}
   .checklist label{
     display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);
-    padding:6px 10px;border-radius:999px;font-size:12px;color:var(--text);margin:0;width:auto;
+    padding:6px 12px;border-radius:999px;font-size:12px;color:var(--text);margin:0;width:auto;
+    text-transform:none;letter-spacing:0;
   }
   .checklist input{width:auto;}
-  /* auth screen */
+
+  /* ---------- AUTH ---------- */
   #authScreen{max-width:340px;margin:60px auto;padding:0 16px;}
   #authScreen .mark{
-    width:48px;height:48px;border-radius:50%;margin:0 auto 16px;
-    background:linear-gradient(135deg,var(--gold),#8a6a2c);
-    display:flex;align-items:center;justify-content:center;font-size:22px;
+    width:52px;height:52px;border-radius:14px;margin:0 auto 16px;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:0 0 24px rgba(51,240,200,.35);
   }
-  #authScreen h1{text-align:center;font-size:19px;margin-bottom:4px;}
-  #authScreen p.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;}
+  #authScreen h1{text-align:center;font-size:20px;margin-bottom:4px;font-weight:800;}
+  #authScreen p.sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:24px;text-transform:uppercase;letter-spacing:1px;}
   #authTabs{display:flex;gap:8px;margin-bottom:16px;}
   #authTabs button{
-    flex:1;background:var(--panel);border:1px solid var(--line);color:var(--muted);
-    padding:8px;border-radius:var(--radius);font-size:13px;cursor:pointer;
+    flex:1;background:transparent;border:1.5px solid var(--line);color:var(--muted);
+    padding:9px;border-radius:999px;font-size:12px;cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
   }
-  #authTabs button.active{background:var(--panel-2);color:var(--text);border-color:var(--gold);}
+  #authTabs button.active{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 12px rgba(51,240,200,.3);}
   #authMsg{font-size:12px;margin-top:10px;min-height:16px;}
   #authMsg.error{color:var(--red);}
   #authMsg.ok{color:var(--green);}
   .hidden{display:none !important;}
-  ::placeholder{color:#54606f;}
 </style>
 </head>
 <body>
 
-<!-- ============ PANTALLA DE LOGIN / REGISTRO ============ -->
+<!-- ============ LOGIN / REGISTRO ============ -->
 <div id="authScreen">
   <div class="mark">⚡</div>
-  <h1>Mi Journal</h1>
-  <p class="sub">Bitácora · Plan de Trading · Libros · Entrenamiento</p>
+  <h1 style="text-align:center">Mi Journal</h1>
+  <p class="sub">Trading · Libros · Entrenamiento · Plan</p>
 
   <div id="authTabs">
     <button id="tabLogin" class="active">Iniciar sesión</button>
@@ -136,17 +201,20 @@
     <input type="email" id="authEmail" placeholder="tucorreo@ejemplo.com">
     <label>Contraseña</label>
     <input type="password" id="authPass" placeholder="••••••••">
-    <button class="btn" id="authSubmit" style="width:100%">Entrar</button>
+    <button class="btn full" id="authSubmit">Entrar</button>
     <div id="authMsg"></div>
   </div>
 </div>
 
-<!-- ============ APP PRINCIPAL (oculta hasta iniciar sesión) ============ -->
+<!-- ============ APP ============ -->
 <div class="wrap hidden" id="app">
   <header class="top">
     <div class="brand">
       <div class="mark">⚡</div>
-      <h1>Mi Journal</h1>
+      <div>
+        <h1>Mi Journal</h1>
+        <div class="tagline">Trading · Libros · Entrenamiento · Plan</div>
+      </div>
     </div>
     <div class="user">
       <span id="userEmail"></span>
@@ -155,17 +223,67 @@
   </header>
 
   <nav class="tabs">
-    <button data-tab="plan" class="active">🎯 Plan de Trading</button>
-    <button data-tab="bitacora">📈 Bitácora</button>
-    <button data-tab="libros">📚 Libros</button>
-    <button data-tab="entrenamiento">💪 Entrenamiento</button>
-    <button data-tab="resumen">🌐 Resumen</button>
+    <button data-tab="bitacora" data-color="cyan" class="active"><span class="dot"></span>Trading</button>
+    <button data-tab="plan" data-color="gold"><span class="dot"></span>Plan</button>
+    <button data-tab="libros" data-color="yellow"><span class="dot"></span>Libros</button>
+    <button data-tab="entrenamiento" data-color="purple"><span class="dot"></span>Entrenamiento</button>
+    <button data-tab="resumen" data-color="blue"><span class="dot"></span>Resumen</button>
   </nav>
 
+  <!-- ---------- BITÁCORA (calendario) ---------- -->
+  <section class="panel active" id="panel-bitacora">
+    <div class="stat-grid">
+      <div class="stat c1"><div class="label">P&L del mes</div><div class="value" id="mPnl">$0.00</div></div>
+      <div class="stat c2"><div class="label">Días ganadores</div><div class="value green" id="mWin">0</div></div>
+      <div class="stat c3"><div class="label">Días perdedores</div><div class="value red" id="mLoss">0</div></div>
+      <div class="stat c4"><div class="label">Win rate</div><div class="value" id="mWinrate">—</div></div>
+      <div class="stat c5"><div class="label">Mejor día</div><div class="value" id="mBest">—</div></div>
+    </div>
+
+    <div class="cal-layout">
+      <div class="card">
+        <div class="cal-head">
+          <button class="navbtn" id="prevMonth">◀</button>
+          <div class="month" id="monthLabel"></div>
+          <button class="navbtn" id="nextMonth">▶</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">💡 Toca un día para registrar · 🔵 día con nota</div>
+      </div>
+
+      <div class="card">
+        <h2>✏️ Registrar día <span class="sub" id="selDayLabel">— selecciona un día del calendario</span></h2>
+        <div class="row">
+          <div><label>Ganancia ($)</label><input type="number" step="0.01" id="beGanancia" placeholder="0"></div>
+          <div><label>Pérdida ($)</label><input type="number" step="0.01" id="bePerdida" placeholder="0"></div>
+        </div>
+        <label>Instrumentos</label>
+        <input type="text" id="beInstrumentos" placeholder="XAUUSD, US100...">
+        <label>Estado emocional</label>
+        <select id="beEmocion">
+          <option value="😎">😎 Tranquilo</option>
+          <option value="🎯">🎯 Enfocado</option>
+          <option value="😰">😰 Ansioso</option>
+          <option value="😤">😤 Frustrado</option>
+          <option value="🧘">🧘 Sereno</option>
+          <option value="😵">😵 Disperso</option>
+        </select>
+        <label>Notas del día</label>
+        <textarea id="beNotas" placeholder="¿Seguiste tu plan? ¿Qué aprendiste?"></textarea>
+        <button class="btn full" id="saveEntry">💾 Guardar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Últimas entradas</h2>
+      <div id="entryList"><div class="empty-msg">Sin registros aún</div></div>
+    </div>
+  </section>
+
   <!-- ---------- PLAN DE TRADING ---------- -->
-  <section class="panel active" id="panel-plan">
-    <div class="card accent-gold">
-      <h2>🎯 Plan de Trading <span class="sub">— tus reglas, tu disciplina</span></h2>
+  <section class="panel" id="panel-plan">
+    <div class="card">
+      <h2 style="color:var(--gold)">🎯 Plan de Trading <span class="sub">— tus reglas, tu disciplina</span></h2>
       <label>Riesgo por operación (%)</label>
       <input type="number" step="0.1" id="planRiesgo" placeholder="1">
 
@@ -192,47 +310,15 @@
       <label>Notas</label>
       <textarea id="planNotas" placeholder="Cualquier otra regla o recordatorio personal"></textarea>
 
-      <button class="btn" id="savePlan">💾 GUARDAR PLAN</button>
+      <button class="btn gold full" id="savePlan">💾 Guardar plan</button>
       <div id="planMsg" style="font-size:12px;color:var(--green);margin-top:8px;"></div>
-    </div>
-  </section>
-
-  <!-- ---------- BITÁCORA ---------- -->
-  <section class="panel" id="panel-bitacora">
-    <div class="card">
-      <h2>✏️ Registrar día</h2>
-      <div class="row">
-        <div><label>Fecha</label><input type="date" id="beFecha"></div>
-      </div>
-      <div class="row">
-        <div><label>Ganancia ($)</label><input type="number" step="0.01" id="beGanancia" placeholder="0"></div>
-        <div><label>Pérdida ($)</label><input type="number" step="0.01" id="bePerdida" placeholder="0"></div>
-      </div>
-      <label>Instrumentos</label>
-      <input type="text" id="beInstrumentos" placeholder="XAUUSD, US100...">
-      <label>Estado emocional</label>
-      <select id="beEmocion">
-        <option value="😎">😎 Tranquilo</option>
-        <option value="🎯">🎯 Enfocado</option>
-        <option value="😰">😰 Ansioso</option>
-        <option value="😤">😤 Frustrado</option>
-        <option value="🧘">🧘 Sereno</option>
-        <option value="😵">😵 Disperso</option>
-      </select>
-      <label>Notas del día</label>
-      <textarea id="beNotas" placeholder="¿Qué pasó hoy?"></textarea>
-      <button class="btn" id="saveEntry">💾 GUARDAR</button>
-    </div>
-    <div class="card">
-      <h2>📋 Últimas entradas</h2>
-      <div id="entryList"><div class="empty">Sin registros aún</div></div>
     </div>
   </section>
 
   <!-- ---------- LIBROS ---------- -->
   <section class="panel" id="panel-libros">
     <div class="card">
-      <h2>📚 Agregar libro</h2>
+      <h2 style="color:var(--yellow)">📚 Agregar libro</h2>
       <label>Título</label>
       <input type="text" id="bkTitulo" placeholder="Trading in the Zone">
       <label>Autor</label>
@@ -245,18 +331,18 @@
       </select>
       <label>Notas</label>
       <textarea id="bkNotas" placeholder="Ideas clave, citas..."></textarea>
-      <button class="btn" id="saveBook">💾 AGREGAR</button>
+      <button class="btn full" style="color:var(--yellow);border-color:var(--yellow)" id="saveBook">💾 Agregar</button>
     </div>
     <div class="card">
       <h2>📖 Tu biblioteca</h2>
-      <div id="bookList"><div class="empty">Sin libros aún</div></div>
+      <div id="bookList"><div class="empty-msg">Sin libros aún</div></div>
     </div>
   </section>
 
   <!-- ---------- ENTRENAMIENTO ---------- -->
   <section class="panel" id="panel-entrenamiento">
     <div class="card">
-      <h2>💪 Registrar sesión</h2>
+      <h2 style="color:var(--purple)">💪 Registrar sesión</h2>
       <div class="row">
         <div><label>Fecha</label><input type="date" id="trFecha"></div>
         <div><label>Duración (min)</label><input type="number" id="trDuracion" placeholder="30"></div>
@@ -265,40 +351,42 @@
       <input type="text" id="trTipo" placeholder="Backtesting, revisión de operaciones, estudio...">
       <label>Notas</label>
       <textarea id="trNotas" placeholder="¿Qué trabajaste hoy?"></textarea>
-      <button class="btn" id="saveTraining">💾 GUARDAR</button>
+      <button class="btn full" style="color:var(--purple);border-color:var(--purple)" id="saveTraining">💾 Guardar</button>
     </div>
     <div class="card">
       <h2>📋 Historial</h2>
-      <div id="trainingList"><div class="empty">Sin registros aún</div></div>
+      <div id="trainingList"><div class="empty-msg">Sin registros aún</div></div>
     </div>
   </section>
 
   <!-- ---------- RESUMEN ---------- -->
   <section class="panel" id="panel-resumen">
     <div class="stat-grid">
-      <div class="stat"><div class="label">P&L total</div><div class="value" id="sumPnl">$0.00</div></div>
-      <div class="stat"><div class="label">Win rate</div><div class="value" id="sumWinrate">—</div></div>
-      <div class="stat"><div class="label">Días ganadores</div><div class="value green" id="sumWin">0</div></div>
-      <div class="stat"><div class="label">Días perdedores</div><div class="value red" id="sumLoss">0</div></div>
-      <div class="stat"><div class="label">Sesiones de entrenamiento</div><div class="value" id="sumTrain">0</div></div>
-      <div class="stat"><div class="label">Libros leídos</div><div class="value" id="sumBooks">0</div></div>
+      <div class="stat c1"><div class="label">P&L total</div><div class="value" id="sumPnl">$0.00</div></div>
+      <div class="stat c5"><div class="label">Win rate</div><div class="value" id="sumWinrate">—</div></div>
+      <div class="stat c2"><div class="label">Días ganadores</div><div class="value green" id="sumWin">0</div></div>
+      <div class="stat c3"><div class="label">Días perdedores</div><div class="value red" id="sumLoss">0</div></div>
+      <div class="stat c4"><div class="label">Sesiones entrenamiento</div><div class="value" id="sumTrain">0</div></div>
+      <div class="stat c4"><div class="label">Libros leídos</div><div class="value" id="sumBooks">0</div></div>
     </div>
-    <div class="card accent-green">
-      <h2>🎯 Estado del Plan de Trading</h2>
-      <div id="planSummary" class="empty">Aún no has guardado tu plan.</div>
+    <div class="card">
+      <h2 style="color:var(--gold)">🎯 Estado del Plan de Trading</h2>
+      <div id="planSummary" class="empty-msg">Aún no has guardado tu plan.</div>
     </div>
   </section>
 
 </div>
 
 <script>
-/* ======= CONFIGURA TU PROYECTO DE SUPABASE AQUÍ ======= */
+/* ======= SUPABASE ======= */
 const SUPABASE_URL = "https://eboavayczimgblmurfcu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_QlvYrE6plY4Cr1WEeUJhLA_a1ohfszY";
-/* ======================================================= */
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
+let allEntries = [];
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedDate = null;
 
 // ---------- AUTH ----------
 const authScreen = document.getElementById('authScreen');
@@ -349,10 +437,10 @@ async function onLogin(user){
   await loadEntries();
   await loadBooks();
   await loadTraining();
+  renderCalendar();
   updateResumen();
 }
 
-// restaurar sesión si ya existe
 sb.auth.getSession().then(({data}) => {
   if(data.session) onLogin(data.session.user);
 });
@@ -403,12 +491,23 @@ document.getElementById('savePlan').onclick = async () => {
   msg.textContent = error ? error.message : '✓ Plan guardado';
 };
 
-// ---------- BITÁCORA ----------
+// ---------- BITÁCORA + CALENDARIO ----------
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
 async function loadEntries(){
-  const { data } = await sb.from('journal_entries').select('*').eq('user_id', currentUser.id).order('fecha', {ascending:false}).limit(20);
+  const { data } = await sb.from('journal_entries').select('*').eq('user_id', currentUser.id).order('fecha', {ascending:false});
+  allEntries = data || [];
+  renderEntryList();
+  renderCalendar();
+  renderMonthStats();
+}
+
+function renderEntryList(){
   const list = document.getElementById('entryList');
-  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin registros aún</div>'; return; }
-  list.innerHTML = data.map(e => `
+  const recent = allEntries.slice(0,20);
+  if(!recent.length){ list.innerHTML = '<div class="empty-msg">Sin registros aún</div>'; return; }
+  list.innerHTML = recent.map(e => `
     <div class="list-item">
       <div>
         <div>${e.estado_emocional||''} ${e.fecha} — ${e.instrumentos||''}</div>
@@ -422,26 +521,90 @@ async function loadEntries(){
     </div>`).join('');
 }
 
+function renderCalendar(){
+  document.getElementById('monthLabel').textContent = MESES[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = DOW.map(d=>`<div class="dow">${d}</div>`).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1);
+  let startOffset = firstDay.getDay() - 1; // Monday=0
+  if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+
+  const entryDates = new Set(allEntries.map(e=>e.fecha));
+
+  for(let i=0;i<startOffset;i++){ grid.innerHTML += '<div class="cal-day empty"></div>'; }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = ['cal-day'];
+    if(entryDates.has(dateStr)) cls.push('has-entry');
+    if(dateStr === selectedDate) cls.push('selected');
+    grid.innerHTML += `<div class="${cls.join(' ')}" data-date="${dateStr}">${d}</div>`;
+  }
+
+  grid.querySelectorAll('.cal-day[data-date]').forEach(cell=>{
+    cell.onclick = () => selectDay(cell.dataset.date);
+  });
+}
+
+function selectDay(dateStr){
+  selectedDate = dateStr;
+  document.getElementById('selDayLabel').textContent = '— ' + dateStr;
+  const existing = allEntries.find(e=>e.fecha===dateStr);
+  document.getElementById('beGanancia').value = existing ? existing.ganancia : '';
+  document.getElementById('bePerdida').value = existing ? existing.perdida : '';
+  document.getElementById('beInstrumentos').value = existing ? existing.instrumentos||'' : '';
+  document.getElementById('beEmocion').value = existing ? existing.estado_emocional||'😎' : '😎';
+  document.getElementById('beNotas').value = existing ? existing.notas||'' : '';
+  renderCalendar();
+}
+
+document.getElementById('prevMonth').onclick = () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); };
+document.getElementById('nextMonth').onclick = () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); };
+
 document.getElementById('saveEntry').onclick = async () => {
+  if(!selectedDate){ alert('Selecciona un día del calendario primero'); return; }
+  const existing = allEntries.find(e=>e.fecha===selectedDate);
   const payload = {
     user_id: currentUser.id,
-    fecha: document.getElementById('beFecha').value || new Date().toISOString().slice(0,10),
+    fecha: selectedDate,
     ganancia: parseFloat(document.getElementById('beGanancia').value) || 0,
     perdida: parseFloat(document.getElementById('bePerdida').value) || 0,
     instrumentos: document.getElementById('beInstrumentos').value,
     estado_emocional: document.getElementById('beEmocion').value,
     notas: document.getElementById('beNotas').value
   };
-  await sb.from('journal_entries').insert(payload);
-  ['beGanancia','bePerdida','beInstrumentos','beNotas'].forEach(id=>document.getElementById(id).value='');
+  if(existing){
+    await sb.from('journal_entries').update(payload).eq('id', existing.id);
+  } else {
+    await sb.from('journal_entries').insert(payload);
+  }
   await loadEntries();
 };
+
+function renderMonthStats(){
+  const prefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const monthEntries = allEntries.filter(e=>e.fecha.startsWith(prefix));
+  let pnl=0, win=0, loss=0, best=null, bestVal=-Infinity;
+  monthEntries.forEach(e=>{
+    const net = Number(e.ganancia||0) - Number(e.perdida||0);
+    pnl += net;
+    if(net>0) win++; else if(net<0) loss++;
+    if(net>bestVal){ bestVal=net; best=e.fecha; }
+  });
+  document.getElementById('mPnl').textContent = (pnl>=0?'+':'') + '$' + pnl.toFixed(2);
+  document.getElementById('mWin').textContent = win;
+  document.getElementById('mLoss').textContent = loss;
+  const total = win+loss;
+  document.getElementById('mWinrate').textContent = total ? Math.round(win/total*100)+'%' : '—';
+  document.getElementById('mBest').textContent = best || '—';
+}
 
 // ---------- LIBROS ----------
 async function loadBooks(){
   const { data } = await sb.from('books').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
   const list = document.getElementById('bookList');
-  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin libros aún</div>'; return; }
+  if(!data || !data.length){ list.innerHTML = '<div class="empty-msg">Sin libros aún</div>'; return; }
   list.innerHTML = data.map(b => `
     <div class="list-item">
       <div>
@@ -470,7 +633,7 @@ document.getElementById('saveBook').onclick = async () => {
 async function loadTraining(){
   const { data } = await sb.from('training_logs').select('*').eq('user_id', currentUser.id).order('fecha', {ascending:false}).limit(20);
   const list = document.getElementById('trainingList');
-  if(!data || !data.length){ list.innerHTML = '<div class="empty">Sin registros aún</div>'; return; }
+  if(!data || !data.length){ list.innerHTML = '<div class="empty-msg">Sin registros aún</div>'; return; }
   list.innerHTML = data.map(t => `
     <div class="list-item">
       <div>
@@ -506,13 +669,12 @@ window.delRow = delRow;
 
 // ---------- RESUMEN ----------
 async function updateResumen(){
-  const { data: entries } = await sb.from('journal_entries').select('*').eq('user_id', currentUser.id);
   const { data: training } = await sb.from('training_logs').select('id').eq('user_id', currentUser.id);
   const { data: books } = await sb.from('books').select('id').eq('user_id', currentUser.id).eq('estado','leido');
   const { data: plan } = await sb.from('trading_plans').select('*').eq('user_id', currentUser.id).maybeSingle();
 
   let pnl=0, win=0, loss=0;
-  (entries||[]).forEach(e=>{
+  allEntries.forEach(e=>{
     const net = Number(e.ganancia||0) - Number(e.perdida||0);
     pnl += net;
     if(net>0) win++; else if(net<0) loss++;
@@ -531,7 +693,7 @@ async function updateResumen(){
     planEl.className='';
     planEl.innerHTML = `Riesgo: <b>${plan.riesgo_por_operacion}%</b> por operación · Sesiones: <b>${(plan.sesiones||[]).join(', ')||'—'}</b> · Horario: <b>${plan.horario_ejecucion||'—'}</b>`;
   } else {
-    planEl.className='empty';
+    planEl.className='empty-msg';
     planEl.textContent = 'Aún no has guardado tu plan.';
   }
 }
